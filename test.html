@@ -30,27 +30,22 @@
     <script>
       async function checkPNR() {
         const pnrNumber = document.getElementById("pnrNumber").value;
-        const apiUrl = `https://travel.paytm.com/api/trains/v1/status?vertical=train&client=web&is_genuine_pnr_web_request=1&pnr_number=${pnrNumber}`;
+        const callbackName = `jsonp_${Math.random()
+          .toString(36)
+          .substring(2, 15)}`; // Generate a unique callback name
 
-        fetch(apiUrl)
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Network response was not ok");
-            }
-            return response.json();
-          })
-          .then((data) => {
-            // Process the data returned from the API
-            console.log(data);
-          })
-          .catch((error) => {
-            console.error(
-              "There was a problem with the fetch operation:",
-              error
-            );
-          });
+        // Create a script element to dynamically load the JSONP request
+        const script = document.createElement("script");
+        script.src = `https://travel.paytm.com/api/trains/v1/status?vertical=train&client=web&is_genuine_pnr_web_request=1&pnr_number=${pnrNumber}&callback=${callbackName}`;
+        document.body.appendChild(script);
+
+        // Define a global function (avoid arrow functions here) with the callback name
+        window[callbackName] = function (data) {
+          console.log(data); // Process the data returned from the API
+          delete window[callbackName]; // Remove the global function after use
+          script.remove(); // Remove the script element
+        };
       }
-
       function displayResult(body) {
         const resultTable = document.getElementById("resultTable");
         resultTable.innerHTML = ""; // Clear previous results
